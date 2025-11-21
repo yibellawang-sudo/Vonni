@@ -9,31 +9,87 @@ const Translator = () => {
   const [translation, setTranslation] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const tones = ['neutral', 'polite', 'angry', 'sarcastic', 'and more'];
+  const tones = ['neutral', 'polite', 'angry', 'sarcastic', 'tired', 'passive-aggressive', 'excited'];
   const contexts = ['general public', 'workplace', 'school', 'dating/romantic', 'family', 'spouse', 'Cambridge University'];
 
   const handleTranslate = async () => {
     if (!input.trim()) return;
     setLoading(true);
-    const primes = detectPrimes(input);
+    
+    try {
+      const response = await fetch("http://localhost:3001/api/translate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          //"Authorization": `Bearer ${import.meta.env.VITE_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: "qwen/qwen3-32b",
+          messages: [
+            {
+              role: "user",
+              content: `You are an alien translator from Matt Haig's novel "The Humans". You are confused by human communication. These include the idioms and a
+              abstract ways of speech they use, the sarcasm, and the hidden meanings or emotional subtexts they use. Your job is to translate human phrases into literal, 
+              overly analytical alien interpretations. These interpretations should make use to statistics, math, science, context analysis and an overly formal tone.
+    Analyse this human phrase: "${input}"
+    Context Settings:
+    - Tone: ${tone}
+    - Social context: ${context}
+    
+    Provide a translation in the alien narrator's voice from "The Humans" (confused, literal, analytical, slight humorous, just beginning to learn about humanity).  Your 
+    response MUST be valid JSON with this exact structure:
+    
+    {
+      "interpretation": "Main alien interpretation of what the human REALLY means (2-4 sentences in alien narrator's analytical voice)",
+      "emotionalSignal": "Brief emotional state label (e.g., 'Hidden Distress', 'Tactical apology')",
+      "socialNote": "One sentence about human social context or empty string if not relevant",
+      "idiomDetected": true or false,
+      "literalMeaning": "What the words literally say versus what humans actually mean"
+    }
+    
+    Important:
+    - Respond ONLY with valid JSON. No markdown, no backticks, no preamble
+    - Tone and context dramatically change meaning - consider them carefully
+    - Reference human illogic and contradictions
+    - Be analytical
+    - Keep it concise but insightful`
+            }
+          ],
+        })
+      });
+      const data = await response.json();
 
-    //ai placeholder
-    const analysis = {
-      interpretation: 'tbd',
-      emotionalSignal: "tbd",
-      culturalNote: 'tbd',
-      idiomDetected: true, //ig idk
-      literalMeaning: "tbd"
-    };
+      if(!response.ok) {
+        throw new Error(data.error?.message || 'AI translation failed');
+      }
 
-    setTranslation({
-      ...analysis,
-      primes,
-      originalPhrase: input,
-      tone,
-      context
-    });
-    setLoading(false);
+      //extract and parse the ai response
+      const text = data.choices[0].message.content;
+      const cleanText = text.replace(/```json|```/g, "").trim();
+      const analysis = JSON.parse(cleanText);
+
+      setTranslation({
+        ...analysis,
+        originalPhrase: input,
+        tone,
+        context
+      });
+    } catch (err) {
+      console.error('Translation error:', err);
+      //fallback
+      setTranslation({
+        interpretation: 'ERROR: Translation system malfunction. Human communication unclear.',
+        emotionalSignal: "SYSTEM ERROR",
+        socialNote: "Unable to process social context",
+        idiomDetected: false,
+        literalMeaning: "System unable to compare literal and actual meanings",
+        originalPhrase: input,
+        tone,
+        context
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
     return (
@@ -44,7 +100,7 @@ const Translator = () => {
             <Globe size={48} color="#22d3ee" />
             <h1 className="title">HUMAN-SPEECH TRANSLATOR</h1>
           </div>
-          <p className="subtitle">For Extraterrestrial Visitors</p>
+          <p className="subtitle">For Vonnadorians</p>
         </div>
 
         {/* Main Input Area */}
@@ -53,15 +109,15 @@ const Translator = () => {
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="such as I'm fine or something like that"
+            placeholder="Please enter human auditory output"
             className="textarea"
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && e.ctrlKey) {
+              if (e.key === 'Enter') {
                 handleTranslate();
               }
             }}
           />
-          <p className="hint">Press Ctrl+Enter to translate</p>
+          <p className="hint">Press Enter to translate</p>
         </div>
 
         {/* Controls */}
@@ -152,7 +208,7 @@ const Translator = () => {
 
                 <div className="result-item-white">
                   <p className="black-small">
-                    <span className="bold-label">CULTURAL NOTE:</span> {translation.culturalNote}
+                    <span className="bold-label">SOCIAL NOTE:</span> {translation.socialNote}
                   </p>
                 </div>
 
