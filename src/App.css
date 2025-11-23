@@ -1,10 +1,44 @@
+* {
+  line-height: 1.7;
+}
+
+/*mode toggle*/
+.mode-toggle {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.mode-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #22d3ee;
+  color: #000;
+  border: 2px solid #000;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.mode-button-inactive {
+  padding: 0.75rem 1.5rem;
+  background-color: #333;
+  color: #fff;
+  border: 2px solid #666;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
 /*main container*/
 .container {
   min-height: 100vh;
   background-color: #000000;
   color: #ffffff;
   padding: 2rem;
-  font-family: Arial, sans-serif;
+  font-family: Futara, sans-serif;
 }
 
 .max-width {
@@ -92,14 +126,14 @@
   }
 }
 
-.controL-box {
+.control-box {
   background-color: #ffffff;
   border-radius: 0.75rem;
   padding: 1.25rem;
   border: 2px solid #22d3ee;
 }
 
-.controL-label {
+.control-label {
   display: flex;
   align-items: center;
   color: #000000;
@@ -107,12 +141,13 @@
   margin-bottom: 0.75rem;
 }
 
-.controL-label svg {
+.control-label svg {
   margin-right: 0.5rem;
 }
 
 .select {
   width: 100%;
+  height: 3vh;
   background-color: #22d3ee;
   color: #000;
   border: 2px solid #000;
@@ -120,6 +155,7 @@
   font-weight: bold;
   font-size: 1rem;
   cursor: pointer;
+  padding: 5px;
 }
 
 .select:focus {
@@ -189,14 +225,14 @@
 .result-item {
   background-color: #000;
   border-radius: 0.5rem;
-  padding: 1rem;
+  padding: 0.3rem 1rem;
   border: 2px solid #fff;
 }
 
 .result-item-white {
   background-color: #fff;
   border-radius: 0.5rem;
-  padding: 0.75rem;
+  padding: 0.3rem 1rem;
   border: 2px solid #000;
 }
 
@@ -223,4 +259,27 @@
 .cyan-small {
   color: #22d3ee;
   font-size: 0.75rem;
+}
+
+/*comparison*/
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.comparison-card {
+  background-color: #22d3ee;
+  border: 3px solid #fff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.comparison-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #000;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
 }
