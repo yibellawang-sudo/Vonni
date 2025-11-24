@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
-import { AlertTriangle, Zap, Globe, Cpu, GitCompare } from 'lucide-react';
+import { AlertTriangle, Zap, Globe, Cpu, GitCompare, Mic } from 'lucide-react';
 import './App.css';
 
 const Translator = () => {
   const [input, setInput] = useState('');
   const [tone, setTone] = useState('neutral');
+  const [secTone, setSecTone] = useState('sarcastic');
   const [context, setContext] = useState('general');
   const [translation, setTranslation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [comparisonMode, setComparisonMode] = useState(false);
   const [comparisons, setComparisons] = useState([]);
   const [loadingComparison, setLoadingComparison] = useState(false); 
+  const [isListening, setIsListening] = useState(false);
+  const [recognition, setRecognition] = useState(null);
 
   const tones = ['neutral', 'polite', 'angry', 'sarcastic', 'tired', 'passive-aggressive', 'excited'];
   const contexts = ['general public', 'workplace', 'school', 'dating/romantic', 'family', 'spouse', 'Cambridge University'];
@@ -99,8 +102,9 @@ const Translator = () => {
     setLoadingComparison(true);
     setComparisons([]);
 
-    //compare diff tones within the same context. make this responsive to the drop select next
-    const tonesToCompare = ['polite', 'sarcastic'];
+    //compare diff tones within the same context
+    const tonesToCompare = [tone, secTone];
+
     const results = [];
 
     for (const compareTone of tonesToCompare) {
@@ -167,7 +171,49 @@ const Translator = () => {
     setLoadingComparison(false);
   };
 
-    return (
+  React.useEffect(() => {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      recognitionInstance.continuous = false;
+      recognitionInstance.interimResults = false;
+      recognitionInstance.lang = 'en-US';
+
+      recognitionInstance.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setInput(transcript);
+        setIsListening(false);
+      };
+
+      recognitionInstance.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognitionInstance.onend = () => {
+        setIsListening(false);
+      };
+
+      setRecognition(recognitionInstance);
+    }
+  }, []);
+  
+  const toggleListening = () => {
+    if (!recognition) {
+      alert('Speech recognition is not supported currently.')
+      return;
+    }
+
+    if (isListening) {
+      recognition.stop();
+      setIsListening(false);
+    } else {
+      recognition.start();
+      setIsListening(true);
+    }
+  };
+
+  return (
     <div className="container">
       <div className="max-width">
         <div className="header">
@@ -198,19 +244,33 @@ const Translator = () => {
         {/* Main Input Area */}
         <div className="input-section">
           <label className="label">ENTER HUMAN PHRASE:</label>
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Please enter human auditory output"
-            className="textarea"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                comparisonMode ? handleComparisonMode(): handleTranslate();
-              }
-            }}
-          />
-          <p className="hint">Press Enter to translate</p>
-        </div>
+          <div style={{ position: 'relative' }}>
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Please enter human auditory output"
+              className="textarea"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  comparisonMode ? handleComparisonMode(): handleTranslate();
+                }
+              }}
+            />
+            <button
+              onClick={toggleListening}
+              className={isListening ? "mic-button listening" : "mic-button"}
+              title={isListening ? "Stop recording" : "Start voice input"}
+              type="button"
+            >
+              <Mic size={34} />
+            </button>
+          </div>
+            <p className="hint">
+              {isListening
+                ? "Listening. Please Speak now."
+                : "Press Enter to translate or the mic to speak"}
+            </p>
+          </div>
 
         {/* Controls */}
         {!comparisonMode && (
@@ -255,11 +315,11 @@ const Translator = () => {
 
         {comparisonMode && (
           <div className="controls-grid">
-            {/* Tone Selector */}
+            {/* First Tone Selector */}
             <div className="control-box">
               <label className="control-label">
                 <Zap size={20} />
-                TONE ANALYSIS:
+                FIRST TONE:
               </label>
               <select
                 value={tone}
@@ -273,6 +333,24 @@ const Translator = () => {
               <p className="small-text">Sentiment Analysis - TBD</p>
             </div>
 
+            {/* Second Tone Selector */}
+            <div className="control-box">
+              <label className="control-label">
+                <Zap size={20} />
+                SECOND TONE:
+              </label>
+              <select 
+                value={secTone}
+                onChange={(e) => setSecTone(e.target.value)}
+                className="select"
+              >
+                {tones.map(t => (
+                  <option key={t} value={t}>{t.toUpperCase()}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Context Selector */}
             <div className="control-box">
               <label className="control-label">
                 <Globe size={20} />
@@ -287,7 +365,7 @@ const Translator = () => {
                   <option key={c} value={c}>{c.toUpperCase()}</option>
                 ))}
               </select>
-              <p className="small-text">Comparing polite and sarcastic tones</p>
+              <p className="small-text">Comparing: {tone} vs {secTone} </p>
             </div>
           </div>
         )}
