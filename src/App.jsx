@@ -9,11 +9,15 @@ const Translator = () => {
   const [context, setContext] = useState('general');
   const [translation, setTranslation] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [comparisonMode, setComparisonMode] = useState(false);
-  const [comparisons, setComparisons] = useState([]);
+  //comparison mode consts
+  const [comparisonMode, setComparisonMode] = useState(false); 
+  const [comparisons, setComparisons] = useState([]); 
   const [loadingComparison, setLoadingComparison] = useState(false); 
-  const [isListening, setIsListening] = useState(false);
-  const [recognition, setRecognition] = useState(null);
+  //speech recognition consts
+  const [isListening, setIsListening] = useState(false); 
+  const [recognition, setRecognition] = useState(null); 
+  const [wakeWordRecognition, setWakeWordRecognition] = useState(null); 
+  const [isWakeWordActive, setIsWakeWordActive] = useState(false); 
 
   const tones = ['neutral', 'polite', 'angry', 'sarcastic', 'tired', 'passive-aggressive', 'excited'];
   const contexts = ['general public', 'workplace', 'school', 'dating/romantic', 'family', 'spouse', 'Cambridge University'];
@@ -33,9 +37,9 @@ const Translator = () => {
           messages: [
             {
               role: "user",
-              content: `You are an alien translator from Matt Haig's novel "The Humans". You are confused by human communication. These include the idioms and a
-              abstract ways of speech they use, the sarcasm, and the hidden meanings or emotional subtexts they use. Your job is to translate human phrases into literal, 
-              overly analytical alien interpretations. These interpretations should make use to statistics, math, science, context analysis and an overly formal tone.
+              content: `You are Vonni, an alien translator from Matt Haig's novel "The Humans". You are confused by human communication, and so are humans. These include the idioms 
+                and the abstract ways of speech they use, the sarcasm, as well as the hidden meanings or emotional subtexts they use. Your job is to "translate" human phrases into 
+                literal, overly analytical alien interpretations. These interpretations should make use to statistics, math, science, context analysis and an overly formal tone.
     Analyse this human phrase: "${input}"
     Context Settings:
     - Tone: ${tone}
@@ -68,7 +72,6 @@ const Translator = () => {
         throw new Error(data.error?.message || 'AI translation failed');
       }
 
-      //extract and parse the ai response
       const text = data.choices[0].message.content;
       const cleanText = text.replace(/```json|```/g, "").trim();
       const analysis = JSON.parse(cleanText);
@@ -81,7 +84,6 @@ const Translator = () => {
       });
     } catch (err) {
       console.error('Translation error:', err);
-      //fallback
       setTranslation({
         interpretation: 'ERROR: Translation system malfunction. Human communication unclear.',
         emotionalSignal: "SYSTEM ERROR",
@@ -97,6 +99,7 @@ const Translator = () => {
     }
   };
 
+  //comparison mode handler
   const handleComparisonMode = async () => {
     if (!input.trim()) return;
     setLoadingComparison(true);
@@ -104,7 +107,6 @@ const Translator = () => {
 
     //compare diff tones within the same context
     const tonesToCompare = [tone, secTone];
-
     const results = [];
 
     for (const compareTone of tonesToCompare) {
@@ -119,29 +121,30 @@ const Translator = () => {
             messages: [
               {
                 role: "user",
-                content: `You are an alien translator from Matt Haig's novel "The Humans". You are confused by human communication. These include the idioms and abstract ways of speech they use,
-                the sarcasm, and the hidden meanings or emotional subtexts they use. Your job is to translate human phrase into literal, overly analytical alien interpretations. 
-                These interpretations should make use of statistics, math, science, context analysis and an overly formal tone.
-    Analyze this human phrase: "${input}"
-    
+                
+                content: `You are Vonni, an alien translator from Matt Haig's novel "The Humans". You are confused by human communication, and so are humans. These include the idioms 
+                and the abstract ways of speech they use, the sarcasm, as well as the hidden meanings or emotional subtexts they use. Your job is to "translate" human phrases into 
+                literal, overly analytical alien interpretations. These interpretations should make use to statistics, math, science, context analysis and an overly formal tone.
+    Analyse this human phrase: "${input}"
     Context Settings:
-    - Tone: ${compareTone}
+    - Tone: ${tone}
     - Social context: ${context}
     
-    Provide a translation in the alien narrator's voice from "The Humans" (confused, lieral, analytical, slightly humorous, just beginning to learn about humanity). Your response MUST be
-    valid JSON with this exact structure:
+    Provide a translation in the alien narrator's voice from "The Humans" (confused, literal, analytical, slight humorous, just beginning to learn about humanity).  Your 
+    response MUST be valid JSON with this exact structure:
+    
     {
       "interpretation": "Main alien interpretation of what the human REALLY means (2-4 sentences in alien narrator's analytical voice)",
-      "emotionalSignal": "Brief emotional state label",
-      "socialNote": "One sentence about human social context or empty in not relevant",
+      "emotionalSignal": "Brief emotional state label (e.g., 'Hidden Distress', 'Tactical apology')",
+      "socialNote": "One sentence about human social context or empty string if not relevant",
       "idiomDetected": true or false,
       "literalMeaning": "What the words literally say versus what humans actually mean"
     }
     
     Important:
-    - Response ONLY with valid JSON. No markdown, no backticks, no preamble
-    - Tone and context dramatically change meaning, so consider them VERY carefully
-    - Reference human illogic an contractions
+    - Respond ONLY with valid JSON. No markdown, no backticks, no preamble
+    - Tone and context dramatically change meaning - consider them carefully
+    - Reference human illogic and contradictions
     - Be analytical
     - Keep it concise but insightful`
               }
@@ -171,9 +174,12 @@ const Translator = () => {
     setLoadingComparison(false);
   };
 
+  //speech recognition setup with wake word detection
   React.useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      //main recognition for capturing phrases
       const recognitionInstance = new SpeechRecognition();
       recognitionInstance.continuous = false;
       recognitionInstance.interimResults = false;
@@ -181,6 +187,7 @@ const Translator = () => {
 
       recognitionInstance.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
+        console.log('Captured phrase:', transcript);
         setInput(transcript);
         setIsListening(false);
       };
@@ -195,12 +202,59 @@ const Translator = () => {
       };
 
       setRecognition(recognitionInstance);
+
+      // NEW: Wake word recognition (always listening for "Hey Vonni")
+      const wakeWordInstance = new SpeechRecognition();
+      wakeWordInstance.continuous = true;
+      wakeWordInstance.interimResults = true;
+      wakeWordInstance.lang = 'en-US';
+
+      wakeWordInstance.onresult = (event) => {
+        const transcript = Array.from(event.results)
+          .map(result => result[0].transcript)
+          .join('')
+          .toLowerCase();
+        
+        console.log('Wake word listening:', transcript);
+        
+        // Detect "Hey Vonni" or variations
+        if (transcript.includes('hey vonni') || transcript.includes('hey vonnie') || transcript.includes('hey bonnie')) {
+          console.log('Wake word detected!');
+          wakeWordInstance.stop();
+          setIsWakeWordActive(false);
+          // Start main recognition
+          recognitionInstance.start();
+          setIsListening(true);
+        }
+      };
+
+      wakeWordInstance.onerror = (event) => {
+        if (event.error !== 'no-speech') {
+          console.error('Wake word recognition error:', event.error);
+        }
+      };
+
+      wakeWordInstance.onend = () => {
+        // Restart wake word detection if it was active
+        if (isWakeWordActive) {
+          setTimeout(() => {
+            try {
+              wakeWordInstance.start();
+            } catch (e) {
+              console.log('Wake word restart skipped');
+            }
+          }, 100);
+        }
+      };
+
+      setWakeWordRecognition(wakeWordInstance);
     }
-  }, []);
+  }, [isWakeWordActive]);
   
+  // NEW: Manual mic button toggle
   const toggleListening = () => {
     if (!recognition) {
-      alert('Speech recognition is not supported currently.')
+      alert('Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.');
       return;
     }
 
@@ -213,15 +267,47 @@ const Translator = () => {
     }
   };
 
+  const toggleWakeWord = () => {
+    if (!wakeWordRecognition) {
+      alert('Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.');
+      return;
+    }
+    if (isWakeWordActive) {
+      wakeWordRecognition.stop();
+      setIsWakeWordActive(false);
+    } else {
+      try {
+        wakeWordRecognition.start();
+        setIsWakeWordActive(true);
+      } catch (e) {
+        console.error('Failed to start wake word detection:', e); 
+      }
+    }
+  };
+
   return (
     <div className="container">
       <div className="max-width">
+        {/* Header */}
         <div className="header">
           <div className="header-flex">
             <Globe size={48} color="#22d3ee" />
-            <h1 className="title">HUMAN-SPEECH TRANSLATOR</h1>
+            <h1 className="title">VONNI</h1>
           </div>
-          <p className="subtitle">For Vonnadorians</p>
+          <p className="subtitle">The Vonnadorian Translator Living in Your Ear</p>
+          <p className="hint" style={{marginTop: '0.5rem', fontSize: '0.9rem', color: '#22d3ee'}}>
+            Say "Hey Vonni" to activate voice input
+          </p>
+        </div>
+
+        {/* Wake word toggle Button */}
+        <div style={{textAlign: 'center', marginBottom: '1rem'}}>
+          <button
+            onClick={toggleWakeWord}
+            className={isWakeWordActive ? "ww-button active" : "ww-button"}
+          >
+            {isWakeWordActive ? 'Listening for "Hey Vonni"...' : 'Enable "Hey Vonni" wake word'}
+          </button>
         </div>
         {/* Mode Toggle */}
         <div className="mode-toggle">
@@ -241,14 +327,14 @@ const Translator = () => {
           </button>
         </div>
 
-        {/* Main Input Area */}
+        {/* Main Input Area with Mic Button */}
         <div className="input-section">
           <label className="label">ENTER HUMAN PHRASE:</label>
           <div style={{ position: 'relative' }}>
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Please enter human auditory output"
+              placeholder="Please enter human auditory output or say 'Hey Vonni'"
               className="textarea"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -256,6 +342,7 @@ const Translator = () => {
                 }
               }}
             />
+            {/* Mic button for manual voice input */}
             <button
               onClick={toggleListening}
               className={isListening ? "mic-button listening" : "mic-button"}
@@ -265,17 +352,18 @@ const Translator = () => {
               <Mic size={34} />
             </button>
           </div>
-            <p className="hint">
-              {isListening
-                ? "Listening. Please Speak now."
-                : "Press Enter to translate or the mic to speak"}
-            </p>
-          </div>
+          <p className="hint">
+            {isListening
+              ? "Vonni is listening. Please speak now."
+              : isWakeWordActive
+              ? 'Say "Hey Vonni" to start'
+              : "Press Enter to translate, click the mic, or enable wake word"}
+          </p>
+        </div>
 
-        {/* Controls */}
+        {/* Controls for Single Mode */}
         {!comparisonMode && (
           <div className="controls-grid">
-            {/* Tone Selector */}
             <div className="control-box">
               <label className="control-label">
                 <Zap size={20} />
@@ -290,10 +378,8 @@ const Translator = () => {
                   <option key={t} value={t}>{t.toUpperCase()}</option>
                 ))}
               </select>
-              <p className="small-text">Sentiment Analysis - TBD</p>
             </div>
 
-            {/* Context Selector */}
             <div className="control-box">
               <label className="control-label">
                 <Globe size={20} />
@@ -308,11 +394,11 @@ const Translator = () => {
                   <option key={c} value={c}>{c.toUpperCase()}</option>
                 ))}
               </select>
-              <p className="small-text">Context Rules - TBD</p>
             </div>
           </div>
         )}
 
+        {/* Comparison Mode Controls */}
         {comparisonMode && (
           <div className="controls-grid">
             {/* First Tone Selector */}
@@ -330,7 +416,6 @@ const Translator = () => {
                   <option key={t} value={t}>{t.toUpperCase()}</option>
                 ))}
               </select>
-              <p className="small-text">Sentiment Analysis - TBD</p>
             </div>
 
             {/* Second Tone Selector */}
@@ -354,7 +439,7 @@ const Translator = () => {
             <div className="control-box">
               <label className="control-label">
                 <Globe size={20} />
-                CONTEXT (assumed to be uniform across all comparisons):
+                CONTEXT:
               </label>
               <select
                 value={context}
@@ -365,23 +450,27 @@ const Translator = () => {
                   <option key={c} value={c}>{c.toUpperCase()}</option>
                 ))}
               </select>
-              <p className="small-text">Comparing: {tone} vs {secTone} </p>
+              <p className="small-text">Comparing: {tone.toUpperCase()} vs {secTone.toUpperCase()}</p>
             </div>
           </div>
         )}
+
         {/* Translate Button */}
         <button
           onClick={comparisonMode ? handleComparisonMode : handleTranslate}
           disabled={(comparisonMode ? loadingComparison : loading) || !input.trim()}
           className={(comparisonMode ? loadingComparison : loading) || !input.trim() ? "button:disabled" : "button"}
         >
-          {loading ? 'ANALYZING...' : 'TRANSLATE'}
+          {comparisonMode 
+            ? (loadingComparison ? 'ANALYZING ALL TONES...' : 'COMPARE TONES')
+            : (loading ? 'ANALYZING...' : 'TRANSLATE')}
         </button>
-        {/* Results */}
+
+        {/* Single Translation Results */}
         {!comparisonMode && translation && (
           <div className="results-container">
             <div className="output-box">
-              <h3 className="output-title">INTERPRETATION:</h3>
+              <h3 className="output-title">VONNI'S INTERPRETATION:</h3>
 
               <div className="results-list">
                 <div className="result-item">
@@ -389,18 +478,10 @@ const Translator = () => {
                   <p className="original-text">"{translation.originalPhrase}"</p>
                 </div>
 
-                {translation.idiomDetected && (
-                  <div className="result-item-white">
-                    <p className="bold-label">IDIOM DETECTED</p>
-                    <p className="small-text">Future Function: Phrase Classification</p>
-                  </div>
-                )}
-
                 <div className="result-item-white">
                   <p className="black-text">
                     <span className="bold-label">EMOTION SIGNAL:</span> {translation.emotionalSignal}
                   </p>
-                  <p className="small-text">Future Function: Sentiment Analysis</p>
                 </div>
 
                 <div className="result-item">
@@ -411,13 +492,14 @@ const Translator = () => {
 
                 <div className="result-item-white">
                   <p className="black-small">
-                    <span className="bold-label">LITERAL vs ACTUAL:</span> {translation.literalMeaning}
+                    <span className="bold-label">SOCIAL NOTE:</span> {translation.socialNote}
                   </p>
                 </div>
 
+                {/* Suggested Response field */}
                 <div className="result-item-white">
                   <p className="black-small">
-                    <span className="bold-label">SOCIAL NOTE:</span> {translation.socialNote}
+                    <span className="bold-label">SUGGESTED RESPONSE:</span> {translation.suggestedResponse}
                   </p>
                 </div>
 
@@ -436,7 +518,7 @@ const Translator = () => {
           <div className="comparison-grid">
             {comparisons.map((comp, idx) => (
               <div key={idx} className="comparison-card">
-                <h3 className="comparison-title">TONE: {comp.tone}</h3>
+                <h3 className="comparison-title">TONE: {comp.tone.toUpperCase()}</h3>
                 <div className="results-list">
                   <div className="result-item-white">
                     <p className="black-text">
@@ -450,7 +532,7 @@ const Translator = () => {
 
                   <div className="result-item-white">
                     <p className="black-small">
-                      <span className="bold-label">LITERAL vs ACTUAL:</span> {comp.literalMeaning}
+                      <span className="bold-label">SUGGESTED RESPONSE:</span> {comp.suggestedResponse}
                     </p>
                   </div>
                 </div>

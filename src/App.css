@@ -322,3 +322,33 @@
     opacity: 0.6;
   }
 }
+
+/* Wake word button */
+
+.ww-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #333;
+  color: #fff;
+  border: 2px solid #666;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s;
+  font-size: 1rem;
+}
+
+.ww-button.active {
+  background: #22d3ee;
+  color: #000;
+  border-color: #000;
+  animation: pulse-wake 2s infinite;
+}
+
+@keyframes pulse-wake {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(34, 211, 238, 0);
+  }
+}
