@@ -38,7 +38,13 @@ app.post('/api/translate', async (req, res) => {
     }
 });
 
-const PORT = 3001;
+app.use(express.static(path.join(__dirname, "dist")));
+
+app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "dist/index.html"));
+});
+
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     console.log(`Proxy server running on http://localhost: ${PORT}`);
     console.log('API Key loaded:', process.env.API_KEY ? 'YES' : 'NO');
