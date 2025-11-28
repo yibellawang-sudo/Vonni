@@ -27,7 +27,7 @@ const Translator = () => {
     setLoading(true);
     
     try {
-      const response = await fetch("http://localhost:3001/api/translate", {
+      const response = await fetch("https://vonni.onrender.com", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -111,7 +111,7 @@ const Translator = () => {
 
     for (const compareTone of tonesToCompare) {
       try {
-        const response = await fetch("http://localhost:3001/api/translate", {
+        const response = await fetch("https://vonni.onrender.com", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
