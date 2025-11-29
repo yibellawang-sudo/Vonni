@@ -1,16 +1,31 @@
-# React + Vite
+# Vonni 
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Vonni** is a full-stack web app that models a Vonnadorian narrator (from Matt Haig’s *The Humans*) to translate human speech into literal, analytical, and slightly humorous alien interpretations. Vonni listens for the wake word **“Hey Vonni”**, supports speech-to-text input, and provides tone-aware translations and tone-comparison features.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Attribution & Disclaimer
+Vonni is lightly inspired by imagery and themes in Matt Haig’s *The Humans*. This project is **not affiliated with or endorsed by** Matt Haig, his publishers, or any rights holders. Vonni uses a Vonnadorian voice as a creative persona for translation/analysis purposes only.
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Features
+- Wake-word support: say **“Hey Vonni”** to activate voice capture.  
+- Manual mic toggle for immediate speech-to-text.  
+- Tone analysis (neutral, sarcastic, polite, angry, etc.).  
+- Context selection (workplace, family, school, dating, etc.).  
+- Single translation and side-by-side tone comparison modes.  
+- Backend proxy to call AI inference APIs securely (API key kept server-side).  
+- Graceful fallback if AI service is unavailable.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Tech stack
+- Frontend: React (Vite)  
+- Backend: Node.js + Express  
+- Speech recognition: Browser Web Speech API (webkitSpeechRecognition / SpeechRecognition)  
+- Deployment: Render (or any Node-capable host)
+
+---
+## Try it out here: https://vonni-2gf2.onrender.com/
+
